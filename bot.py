@@ -30,6 +30,9 @@ from utils import (
 )
 from web_server import WebServer
 
+# ══════════════════════════════════════
+# LOGGING SETUP
+# ══════════════════════════════════════
 logging.basicConfig(
     format="%(asctime)s │ %(name)-18s │ %(levelname)-8s │ %(message)s",
     level=logging.INFO,
@@ -40,6 +43,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("NetflixBot")
 
+# ══════════════════════════════════════
+# INITIALIZE
+# ══════════════════════════════════════
 db = UltimateDatabase()
 
 app = Client(
@@ -51,10 +57,16 @@ app = Client(
 
 user_cooldowns = {}
 
+# ══════════════════════════════════════
+# WEB SERVER STARTER
+# ══════════════════════════════════════
 def start_web_server():
     server = WebServer(db)
     web.run_app(server.app, host=WEB_HOST, port=WEB_PORT, print=None, handle_signals=False)
 
+# ══════════════════════════════════════
+# HELPER FUNCTIONS
+# ══════════════════════════════════════
 async def check_force_sub(user_id):
     channels = db.get_all_channels()
     if not channels:
@@ -116,7 +128,7 @@ def build_welcome_text(user, fname):
     )
 
 # ══════════════════════════════════════
-# /start COMMAND
+# COMMAND: /start
 # ══════════════════════════════════════
 @app.on_message(filters.command("start") & filters.private)
 async def cmd_start(client, message: Message):
@@ -157,7 +169,7 @@ async def cmd_start(client, message: Message):
     await message.reply_text(text, reply_markup=main_menu_kb(categories), parse_mode=enums.ParseMode.HTML, disable_web_page_preview=True)
 
 # ══════════════════════════════════════
-# /admin COMMAND
+# COMMAND: /admin
 # ══════════════════════════════════════
 @app.on_message(filters.command("admin") & filters.private)
 async def cmd_admin(client, message: Message):
@@ -176,7 +188,7 @@ async def cmd_admin(client, message: Message):
     )
 
 # ══════════════════════════════════════
-# /ping COMMAND
+# COMMAND: /ping
 # ══════════════════════════════════════
 @app.on_message(filters.command("ping") & filters.private)
 async def cmd_ping(client, message: Message):
@@ -203,7 +215,7 @@ async def cb_verify_join(client, cb: CallbackQuery):
         await cb.answer("❌ You haven't joined all channels yet!", show_alert=True)
 
 # ══════════════════════════════════════
-# CALLBACK: back_main
+# CALLBACK: back_main & cancel
 # ══════════════════════════════════════
 @app.on_callback_query(filters.regex("back_main"))
 async def cb_back_main(client, cb: CallbackQuery):
@@ -219,9 +231,6 @@ async def cb_back_main(client, cb: CallbackQuery):
     except MessageNotModified:
         pass
 
-# ══════════════════════════════════════
-# CALLBACK: cancel_action
-# ══════════════════════════════════════
 @app.on_callback_query(filters.regex("cancel_action"))
 async def cb_cancel(client, cb: CallbackQuery):
     uid = cb.from_user.id
@@ -229,15 +238,12 @@ async def cb_cancel(client, cb: CallbackQuery):
     await cb_back_main(client, cb)
     await cb.answer("❌ Cancelled!")
 
-# ══════════════════════════════════════
-# CALLBACK: noop
-# ══════════════════════════════════════
 @app.on_callback_query(filters.regex("noop"))
 async def cb_noop(client, cb: CallbackQuery):
     await cb.answer("📄 Page info", show_alert=False)
 
 # ══════════════════════════════════════
-# CALLBACK: gen_now
+# CALLBACK: gen_now (Generate Account)
 # ══════════════════════════════════════
 @app.on_callback_query(filters.regex("gen_now"))
 async def cb_generate(client, cb: CallbackQuery):
@@ -302,7 +308,7 @@ async def cb_generate(client, cb: CallbackQuery):
         pass
 
 # ══════════════════════════════════════
-# CALLBACK: gen_cat_
+# CALLBACK: gen_cat_ (Generate by Category)
 # ══════════════════════════════════════
 @app.on_callback_query(filters.regex(r"gen_cat_(.+)"))
 async def cb_generate_category(client, cb: CallbackQuery):
@@ -338,7 +344,7 @@ async def cb_generate_category(client, cb: CallbackQuery):
         pass
 
 # ══════════════════════════════════════
-# CALLBACK: dl_acc_
+# CALLBACK: dl_acc_ & full_ck_
 # ══════════════════════════════════════
 @app.on_callback_query(filters.regex(r"dl_acc_(\d+)"))
 async def cb_download_acc(client, cb: CallbackQuery):
@@ -353,13 +359,8 @@ async def cb_download_acc(client, cb: CallbackQuery):
         f"╔══════════════════════════════════════╗\n"
         f"║  NETFLIX PREMIUM ACCOUNT              ║\n"
         f"╚══════════════════════════════════════╝\n\n"
-        f"📧 Email: {acc['email'] or 'N/A'}\n"
-        f"📱 Phone: {acc['phone'] or 'N/A'}\n"
-        f"🌍 Country: {acc['country'] or 'N/A'}\n"
-        f"📋 Plan: {acc['plan'] or 'Premium'}\n\n"
-        f"🍪 Cookie:\n{acc['cookie']}\n\n"
-        f"🔗 Login Link:\n{login_link}\n\n"
-        f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        f"📧 Email: {acc['email'] or 'N/A'}\n📱 Phone: {acc['phone'] or 'N/A'}\n🌍 Country: {acc['country'] or 'N/A'}\n📋 Plan: {acc['plan'] or 'Premium'}\n\n"
+        f"🍪 Cookie:\n{acc['cookie']}\n\n🔗 Login Link:\n{login_link}"
     )
     bio = BytesIO(content.encode('utf-8'))
     bio.name = f"netflix_account_{acc_id}.txt"
@@ -371,9 +372,6 @@ async def cb_download_acc(client, cb: CallbackQuery):
     except:
         pass
 
-# ══════════════════════════════════════
-# CALLBACK: full_ck_
-# ══════════════════════════════════════
 @app.on_callback_query(filters.regex(r"full_ck_(\d+)"))
 async def cb_full_cookie(client, cb: CallbackQuery):
     acc_id = int(cb.matches[0].group(1))
@@ -390,7 +388,7 @@ async def cb_full_cookie(client, cb: CallbackQuery):
         pass
 
 # ══════════════════════════════════════
-# CALLBACK: send_file
+# CALLBACK: send_file, send_text, check_cookie
 # ══════════════════════════════════════
 @app.on_callback_query(filters.regex("send_file"))
 async def cb_send_file(client, cb: CallbackQuery):
@@ -400,18 +398,12 @@ async def cb_send_file(client, cb: CallbackQuery):
         return
     db.set_user_state(uid, "waiting_file")
     await cb.message.edit_text(
-        "📄 <b>Send File .txt</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Upload a <b>.txt file</b> with Netflix cookies.\n\n"
-        "📝 <b>Formats:</b>\n"
-        "1️⃣ Simple: <code>NetflixId=abc123; nfSessionId=xyz</code>\n"
-        "2️⃣ With metadata: <code>cookie|email|phone|country|plan|status</code>\n\n"
-        "💡 One cookie per line\n⏳ <i>Waiting for file...</i>",
+        "📄 <b>Send File .txt</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\nUpload a <b>.txt file</b> with Netflix cookies.\n\n"
+        "📝 <b>Formats:</b>\n1️⃣ Simple: <code>NetflixId=abc123; nfSessionId=xyz</code>\n"
+        "2️⃣ With metadata: <code>cookie|email|phone|country|plan|status</code>\n\n💡 One per line\n⏳ <i>Waiting for file...</i>",
         reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML
     )
 
-# ══════════════════════════════════════
-# CALLBACK: send_text
-# ══════════════════════════════════════
 @app.on_callback_query(filters.regex("send_text"))
 async def cb_send_text(client, cb: CallbackQuery):
     uid = cb.from_user.id
@@ -420,16 +412,11 @@ async def cb_send_text(client, cb: CallbackQuery):
         return
     db.set_user_state(uid, "waiting_text")
     await cb.message.edit_text(
-        "💬 <b>Send Cookie Text</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Paste your Netflix cookie string.\n\n"
-        "📝 <b>Format:</b>\n<code>NetflixId=abc; nfSessionId=xyz</code>\n\n"
-        "💡 Multiple cookies: one per line\n⏳ <i>Waiting for message...</i>",
+        "💬 <b>Send Cookie Text</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\nPaste your Netflix cookie string.\n\n"
+        "📝 <b>Format:</b>\n<code>NetflixId=abc; nfSessionId=xyz</code>\n\n💡 Multiple cookies: one per line\n⏳ <i>Waiting for message...</i>",
         reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML
     )
 
-# ══════════════════════════════════════
-# CALLBACK: check_cookie
-# ══════════════════════════════════════
 @app.on_callback_query(filters.regex("check_cookie"))
 async def cb_check_cookie(client, cb: CallbackQuery):
     uid = cb.from_user.id
@@ -438,8 +425,7 @@ async def cb_check_cookie(client, cb: CallbackQuery):
         return
     db.set_user_state(uid, "checking_cookie")
     await cb.message.edit_text(
-        "🔍 <b>Cookie Validity Checker</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Send a Netflix cookie to verify.\n⏳ <i>Waiting for cookie...</i>",
+        "🔍 <b>Cookie Validity Checker</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\nSend a Netflix cookie to verify.\n⏳ <i>Waiting for cookie...</i>",
         reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML
     )
 
@@ -449,12 +435,8 @@ async def cb_check_cookie(client, cb: CallbackQuery):
 @app.on_callback_query(filters.regex("how_use"))
 async def cb_how_use(client, cb: CallbackQuery):
     await cb.message.edit_text(
-        "📖 <b>How to Use</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "🔑 <b>Generate Now:</b> Get cookie + login link\n"
-        "📄 <b>Send File:</b> Upload .txt with cookies\n"
-        "💬 <b>Send Text:</b> Paste cookie directly\n"
-        "🔍 <b>Check Cookie:</b> Verify if cookie works\n\n"
-        "⚠️ Daily limit applies\n⚠️ Messages auto-delete\n⚠️ Stay in required channels",
+        "📖 <b>How to Use</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n🔑 <b>Generate Now:</b> Get cookie + login link\n📄 <b>Send File:</b> Upload .txt with cookies\n"
+        "💬 <b>Send Text:</b> Paste cookie directly\n🔍 <b>Check Cookie:</b> Verify if cookie works\n\n⚠️ Daily limit applies\n⚠️ Messages auto-delete\n⚠️ Stay in required channels",
         reply_markup=back_kb(), parse_mode=enums.ParseMode.HTML
     )
 
@@ -469,12 +451,8 @@ async def cb_my_stats(client, cb: CallbackQuery):
     today = db.get_daily_count(uid)
     bar = progress_bar(today, limit)
     await cb.message.edit_text(
-        f"📊 <b>Your Stats</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"👤 <b>Name:</b> {cb.from_user.first_name}\n"
-        f"🆔 <b>ID:</b> <code>{uid}</code>\n"
-        f"📅 <b>Joined:</b> {format_time_ago(user['joined_date'])}\n\n"
-        f"📝 <b>Today:</b> {bar} {today}/{limit}\n"
-        f"📈 <b>Total Generated:</b> {user['total_generated']}",
+        f"📊 <b>Your Stats</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n👤 <b>Name:</b> {cb.from_user.first_name}\n🆔 <b>ID:</b> <code>{uid}</code>\n"
+        f"📅 <b>Joined:</b> {format_time_ago(user['joined_date'])}\n\n📝 <b>Today:</b> {bar} {today}/{limit}\n📈 <b>Total Generated:</b> {user['total_generated']}",
         reply_markup=back_kb(), parse_mode=enums.ParseMode.HTML
     )
 
@@ -482,13 +460,9 @@ async def cb_my_stats(client, cb: CallbackQuery):
 async def cb_about(client, cb: CallbackQuery):
     stats = db.get_stats_summary()
     await cb.message.edit_text(
-        f"💎 <b>About {BOT_NAME}</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🤖 <b>Version:</b> {BOT_VERSION}\n"
-        f"👥 <b>Users:</b> {format_number(stats['total_users'])}\n"
-        f"📦 <b>Accounts:</b> {format_number(stats['available_accounts'])} available",
+        f"💎 <b>About {BOT_NAME}</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n🤖 <b>Version:</b> {BOT_VERSION}\n👥 <b>Users:</b> {format_number(stats['total_users'])}\n📦 <b>Accounts:</b> {format_number(stats['available_accounts'])} available",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("📢 Updates", url=f"https://t.me/{UPDATE_CHANNEL}"),
-             InlineKeyboardButton("💬 Support", url=f"https://t.me/{SUPPORT_CHAT}")],
+            [InlineKeyboardButton("📢 Updates", url=f"https://t.me/{UPDATE_CHANNEL}"), InlineKeyboardButton("💬 Support", url=f"https://t.me/{SUPPORT_CHAT}")],
             [InlineKeyboardButton("🔙 Main Menu", callback_data="back_main")]
         ]), parse_mode=enums.ParseMode.HTML
     )
@@ -607,12 +581,8 @@ async def process_cookie_text(client, message: Message):
     if len(results) == 1:
         cookie, link, parsed = results[0]
         response = (
-            f"✅ <b>Cookie Processed!</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"📧 <b>Email:</b> <code>{parsed['email'] or 'N/A'}</code>\n"
-            f"🌍 <b>Country:</b> {parsed['country'] or 'Unknown'}\n"
-            f"📋 <b>Plan:</b> {parsed['plan']}\n\n"
-            f"🔗 <b>Login Link:</b>\n<code>{link}</code>\n\n"
-            f"💡 Click link → Done! 🚀\n⏰ Auto-delete: {auto_del}s"
+            f"✅ <b>Cookie Processed!</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n📧 <b>Email:</b> <code>{parsed['email'] or 'N/A'}</code>\n🌍 <b>Country:</b> {parsed['country'] or 'Unknown'}\n"
+            f"📋 <b>Plan:</b> {parsed['plan']}\n\n🔗 <b>Login Link:</b>\n<code>{link}</code>\n\n💡 Click link → Done! 🚀\n⏰ Auto-delete: {auto_del}s"
         )
     else:
         response = f"✅ <b>{len(results)} Cookies Processed!</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -656,10 +626,7 @@ async def cb_adm_back(client, cb: CallbackQuery):
     stats = db.get_stats_summary()
     status = "🟢 Online" if db.get_setting('bot_status') == '1' else "🔴 Maintenance"
     await cb.message.edit_text(
-        f"🔐 <b>Admin Panel</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🤖 <b>Status:</b> {status}\n"
-        f"👥 <b>Users:</b> {stats['total_users']}\n"
-        f"📦 <b>Accounts:</b> {stats['available_accounts']}/{stats['total_accounts']}\n\n👇 Select:",
+        f"🔐 <b>Admin Panel</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n🤖 <b>Status:</b> {status}\n👥 <b>Users:</b> {stats['total_users']}\n📦 <b>Accounts:</b> {stats['available_accounts']}/{stats['total_accounts']}\n\n👇 Select:",
         reply_markup=admin_panel_kb(), parse_mode=enums.ParseMode.HTML
     )
 
@@ -669,12 +636,7 @@ async def cb_adm_stats(client, cb: CallbackQuery):
         return
     stats = db.get_stats_summary()
     await cb.message.edit_text(
-        f"📊 <b>Dashboard</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"👥 Users: {stats['total_users']}\n"
-        f"📦 Available: {stats['available_accounts']}\n"
-        f"🔴 Used: {stats['used_accounts']}\n"
-        f"⚠️ Invalid: {stats['invalid_accounts']}\n"
-        f"📝 Today: {stats['today_generated']}",
+        f"📊 <b>Dashboard</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n👥 Users: {stats['total_users']}\n📦 Available: {stats['available_accounts']}\n🔴 Used: {stats['used_accounts']}\n⚠️ Invalid: {stats['invalid_accounts']}\n📝 Today: {stats['today_generated']}",
         reply_markup=admin_panel_kb(), parse_mode=enums.ParseMode.HTML
     )
 
@@ -684,9 +646,7 @@ async def cb_adm_add_acc(client, cb: CallbackQuery):
         return
     db.set_user_state(cb.from_user.id, "adm_add_acc")
     await cb.message.edit_text(
-        "➕ <b>Add Account</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Send account:\n<code>cookie|email|phone|country|plan|status|screen_type|category</code>\n\n"
-        "💡 Only cookie is required",
+        "➕ <b>Add Account</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\nSend account:\n<code>cookie|email|phone|country|plan|status|screen_type|category</code>\n\n💡 Only cookie is required",
         reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML
     )
 
@@ -695,12 +655,7 @@ async def cb_adm_upload(client, cb: CallbackQuery):
     if not is_admin(cb.from_user.id):
         return
     db.set_user_state(cb.from_user.id, "adm_upload")
-    await cb.message.edit_text(
-        "📁 <b>Bulk Upload</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Send a <b>.txt file</b> with accounts.\n"
-        "One per line. Max 500.",
-        reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML
-    )
+    await cb.message.edit_text("📁 <b>Bulk Upload</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\nSend a <b>.txt file</b> with accounts.\nOne per line. Max 500.", reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML)
 
 @app.on_callback_query(filters.regex("adm_search"))
 async def cb_adm_search(client, cb: CallbackQuery):
@@ -714,11 +669,7 @@ async def cb_adm_broadcast(client, cb: CallbackQuery):
     if not is_admin(cb.from_user.id):
         return
     db.set_user_state(cb.from_user.id, "adm_broadcast")
-    await cb.message.edit_text(
-        f"📢 <b>Broadcast</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"👥 Total Users: {db.get_user_count()}\n\nSend message to broadcast:",
-        reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML
-    )
+    await cb.message.edit_text(f"📢 <b>Broadcast</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n👥 Total Users: {db.get_user_count()}\n\nSend message:", reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML)
 
 @app.on_callback_query(filters.regex("adm_ban$"))
 async def cb_adm_ban(client, cb: CallbackQuery):
@@ -739,10 +690,7 @@ async def cb_adm_add_ch(client, cb: CallbackQuery):
     if not is_admin(cb.from_user.id):
         return
     db.set_user_state(cb.from_user.id, "adm_add_ch")
-    await cb.message.edit_text(
-        "📺 <b>Add Channel</b>\n\nSend: <code>channel_id|username|title|invite_link</code>\n\nOr just send @username",
-        reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML
-    )
+    await cb.message.edit_text("📺 <b>Add Channel</b>\n\nSend: <code>channel_id|username|title|invite_link</code>\n\nOr just send @username", reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML)
 
 @app.on_callback_query(filters.regex("adm_channels"))
 async def cb_adm_channels(client, cb: CallbackQuery):
@@ -798,10 +746,7 @@ async def cb_adm_set_setting(client, cb: CallbackQuery):
     key = cb.matches[0].group(1)
     current = db.get_setting(key, '')
     db.set_user_state(cb.from_user.id, "adm_setting", json.dumps({'key': key}))
-    await cb.message.edit_text(
-        f"✏️ <b>Setting: {key}</b>\n\nCurrent: <code>{current}</code>\n\nSend new value:",
-        reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML
-    )
+    await cb.message.edit_text(f"✏️ <b>Setting: {key}</b>\n\nCurrent: <code>{current}</code>\n\nSend new value:", reply_markup=cancel_kb(), parse_mode=enums.ParseMode.HTML)
 
 @app.on_callback_query(filters.regex("adm_clean_used"))
 async def cb_adm_clean_used(client, cb: CallbackQuery):
@@ -872,18 +817,11 @@ async def cb_adm_acc_detail(client, cb: CallbackQuery):
         return
     status = "🔴 Used" if acc['is_used'] else ("⚠️ Invalid" if not acc['is_valid'] else "✅ Available")
     await cb.message.edit_text(
-        f"📋 <b>Account #{acc_id}</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📧 <b>Email:</b> <code>{acc['email'] or 'N/A'}</code>\n"
-        f"🌍 <b>Country:</b> {acc['country'] or 'N/A'}\n"
-        f"📋 <b>Plan:</b> {acc['plan'] or 'N/A'}\n"
-        f"📊 <b>Status:</b> {status}\n"
-        f"📁 <b>Category:</b> {acc['category'] or 'N/A'}\n\n"
-        f"🍪 <b>Cookie:</b>\n<code>{acc['cookie'][:200]}{'...' if len(acc['cookie']) > 200 else ''}</code>",
+        f"📋 <b>Account #{acc_id}</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n📧 <b>Email:</b> <code>{acc['email'] or 'N/A'}</code>\n🌍 <b>Country:</b> {acc['country'] or 'N/A'}\n📋 <b>Plan:</b> {acc['plan'] or 'N/A'}\n"
+        f"📊 <b>Status:</b> {status}\n📁 <b>Category:</b> {acc['category'] or 'N/A'}\n\n🍪 <b>Cookie:</b>\n<code>{acc['cookie'][:200]}{'...' if len(acc['cookie']) > 200 else ''}</code>",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🗑️ Delete", callback_data=f"adm_del_{acc_id}"),
-             InlineKeyboardButton("⚠️ Invalidate", callback_data=f"adm_inv_{acc_id}")],
-            [InlineKeyboardButton("✅ Validate", callback_data=f"adm_val_{acc_id}"),
-             InlineKeyboardButton("🔄 Reset", callback_data=f"adm_reset_{acc_id}")],
+            [InlineKeyboardButton("🗑️ Delete", callback_data=f"adm_del_{acc_id}"), InlineKeyboardButton("⚠️ Invalidate", callback_data=f"adm_inv_{acc_id}")],
+            [InlineKeyboardButton("✅ Validate", callback_data=f"adm_val_{acc_id}"), InlineKeyboardButton("🔄 Reset", callback_data=f"adm_reset_{acc_id}")],
             [InlineKeyboardButton("🔙 List", callback_data="adm_acc_list_0_all")]
         ]), parse_mode=enums.ParseMode.HTML
     )
@@ -955,15 +893,9 @@ async def cb_adm_user_detail(client, cb: CallbackQuery):
         await cb.answer("❌ Not found!", show_alert=True)
         return
     await cb.message.edit_text(
-        f"👤 <b>User</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🆔 <b>ID:</b> <code>{uid}</code>\n"
-        f"👤 <b>Name:</b> {user['first_name']}\n"
-        f"📅 <b>Joined:</b> {format_time_ago(user['joined_date'])}\n"
-        f"📈 <b>Total Gen:</b> {user['total_generated']}\n"
-        f"🚫 <b>Banned:</b> {'Yes' if user['is_banned'] else 'No'}",
+        f"👤 <b>User</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n🆔 <b>ID:</b> <code>{uid}</code>\n👤 <b>Name:</b> {user['first_name']}\n📅 <b>Joined:</b> {format_time_ago(user['joined_date'])}\n📈 <b>Total Gen:</b> {user['total_generated']}\n🚫 <b>Banned:</b> {'Yes' if user['is_banned'] else 'No'}",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🚫 Ban", callback_data=f"adm_ban_{uid}"),
-             InlineKeyboardButton("✅ Unban", callback_data=f"adm_unban_{uid}")],
+            [InlineKeyboardButton("🚫 Ban", callback_data=f"adm_ban_{uid}"), InlineKeyboardButton("✅ Unban", callback_data=f"adm_unban_{uid}")],
             [InlineKeyboardButton("🔙 Users", callback_data="adm_users_0")]
         ]), parse_mode=enums.ParseMode.HTML
     )
@@ -1037,12 +969,7 @@ async def cb_adm_analytics(client, cb: CallbackQuery):
     check_24h = db.get_event_count('cookie_check', 24)
     new_24h = db.get_event_count('new_user', 24)
     await cb.message.edit_text(
-        f"📈 <b>Analytics</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📊 <b>Last 24h:</b>\n"
-        f"   🔑 Generated: {gen_24h}\n"
-        f"   🔍 Checked: {check_24h}\n"
-        f"   👥 New Users: {new_24h}\n"
-        f"📦 <b>Stock:</b> {db.get_account_count('available')} accounts",
+        f"📈 <b>Analytics</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n📊 <b>Last 24h:</b>\n   🔑 Generated: {gen_24h}\n   🔍 Checked: {check_24h}\n   👥 New Users: {new_24h}\n📦 <b>Stock:</b> {db.get_account_count('available')} accounts",
         reply_markup=admin_panel_kb(), parse_mode=enums.ParseMode.HTML
     )
 
